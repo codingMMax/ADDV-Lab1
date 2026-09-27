@@ -56,32 +56,3 @@ per-domain I/O delays) and reports timing/area/power — results summarized in
 `rtl/design.md` §11. Verified: DC `V-2023.12-SP5-1` elaborates SystemVerilog
 `interface` ports with `modport` (no synthesis wrapper needed). Keep the
 interface simple (signals + modports only; no clocking blocks).
-
-## Part I RTL parameters
-
-- `DATA_WIDTH = 8`
-- `DEPTH = 16` (`ADDR_W = 4`) — depth must be a power of 2 for gray-code pointers
-- Separate `wr_clk` / `rd_clk`, gray-code pointers with 2FF synchronizers
-- `full` / `empty` plus `almost_full` at 75% and `almost_empty` at 25% occupancy
-- SystemVerilog style: `always_ff`/`always_comb`, `logic`, `.*` instantiation, interface + modports
-
-## Part I verification checklist (from the lab page)
-
-1. FIFO empty and then filled; FIFO full and then emptied
-2. Correct assertion of `almost_full` and `almost_empty` flags
-3. Simultaneous read and write with different clock frequencies
-4. Self-checking scoreboard (data integrity), plus FSDB dumps for annotated waveform screenshots
-
-## Deliverables checklist (Part I)
-
-- [ ] Hand-drawn microarchitecture diagram (memory, synchronizer FFs, flag logic, pointer logic)
-- [ ] Annotated waveform snapshots for the 3 verification requirements
-- [ ] FULL/EMPTY Mealy-or-Moore answer (1-2 sentences)
-- [ ] Synthesis results: max frequency per clock domain, constraints (async clocks/false paths), area, power
-- [ ] Summary of AI-tool interaction; one bug + debugging story
-- [ ] Code + Makefile + README (no tool-generated files), report PDF + zip named with both partners
-
-## Git
-
-Local repo initialized here; partner remote to be added later. Tool-generated artifacts
-are ignored via `.gitignore` — keep the submission zip clean.

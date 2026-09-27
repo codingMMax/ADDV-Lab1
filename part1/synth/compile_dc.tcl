@@ -22,8 +22,21 @@ set my_if fifo_port
 set my_write_clock_pin $my_if.wr_clk
 set my_read_clock_pin  $my_if.rd_clk
 
-#/* Target frequency; Fmax computed from slack     */
-set my_clk_freq_MHz 1000
+#/* Target clock periods in ns (overridable via env)  */
+#/*   WR_PERIOD_NS / RD_PERIOD_NS                     */
+set my_wr_period_ns 1.0
+set my_rd_period_ns 1.0
+if { [info exists env(WR_PERIOD_NS)] } { set my_wr_period_ns $env(WR_PERIOD_NS) }
+if { [info exists env(RD_PERIOD_NS)] } { set my_rd_period_ns $env(RD_PERIOD_NS) }
+
+#/* Map effort (overridable: MAP_EFFORT=low|medium|high) */
+set my_map_effort medium
+if { [info exists env(MAP_EFFORT)] } { set my_map_effort $env(MAP_EFFORT) }
+
+#/* Report filename suffix (overridable: RUN_TAG)     */
+#/* e.g. RUN_TAG=p0.95 -> timing_wr_p0.95.rep         */
+set my_tag ""
+if { [info exists env(RUN_TAG)] && $env(RUN_TAG) ne "" } { set my_tag "_$env(RUN_TAG)" }
 
 #/* Delay of input signals (Clock-to-Q, Package etc.)  */
 set my_input_delay_ns 0.1
@@ -53,10 +66,8 @@ current_design $my_toplevel
 link
 uniquify
 
-set my_period [expr 1000 / $my_clk_freq_MHz]
-
-create_clock -period $my_period -name wr_clk [get_ports [list $my_write_clock_pin]]
-create_clock -period $my_period -name rd_clk [get_ports [list $my_read_clock_pin]]
+create_clock -period $my_wr_period_ns -name wr_clk [get_ports [list $my_write_clock_pin]]
+create_clock -period $my_rd_period_ns -name rd_clk [get_ports [list $my_read_clock_pin]]
 set_clock_groups -asynchronous -group [get_clocks wr_clk] \
                                 -group [get_clocks rd_clk]
 
@@ -72,9 +83,9 @@ set_input_delay  $my_input_delay_ns  -clock rd_clk $rd_inputs
 set_output_delay $my_output_delay_ns -clock wr_clk $wr_outputs
 set_output_delay $my_output_delay_ns -clock rd_clk $rd_outputs
 
-compile -ungroup_all -map_effort medium
+compile -ungroup_all -map_effort $my_map_effort
 
-compile -incremental_mapping -map_effort medium
+compile -incremental_mapping -map_effort $my_map_effort
 
 check_design
 report_constraint -all_violators
@@ -88,11 +99,11 @@ report_constraint -all_violators
 #set filename [format "%s%s"  $my_toplevel ".db"]
 #write -f db -hier -output $filename -xg_force_db
 
-redirect timing.rep    { report_timing -max_paths 3 }
-redirect timing_wr.rep { report_timing -group wr_clk -max_paths 1 }
-redirect timing_rd.rep { report_timing -group rd_clk -max_paths 1 }
-redirect cell.rep      { report_cell }
-redirect power.rep     { report_power }
-redirect area.rep      { report_area }
+redirect timing${my_tag}.rep    { report_timing -max_paths 3 }
+redirect timing_wr${my_tag}.rep { report_timing -group wr_clk -max_paths 1 }
+redirect timing_rd${my_tag}.rep { report_timing -group rd_clk -max_paths 1 }
+redirect cell${my_tag}.rep      { report_cell }
+redirect power${my_tag}.rep     { report_power }
+redirect area${my_tag}.rep      { report_area }
 
 quit
